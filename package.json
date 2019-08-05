@@ -1,0 +1,17 @@
+{
+  "name": "snek",
+  "version": "0.1.0",
+  "private": true,
+  "repository": "https://github.com/woubuc/snek.git",
+  "author": "woubuc <wouter@epicteddy.com>",
+  "scripts": {
+    "dev": "rollup -c rollup.config.js --watch",
+    "build": "rollup -c rollup.config.js"
+  },
+  "devDependencies": {
+    "rollup": "^1.18.0",
+    "rollup-plugin-terser": "^5.1.1",
+    "rollup-plugin-typescript2": "^0.22.1",
+    "typescript": "^3.5.3"
+  }
+}
