@@ -3,7 +3,7 @@ import SnekPart from './SnekPart';
 import Timer from './Timer';
 import { MAP_HEIGHT, MAP_WIDTH } from '../const';
 import { Direction } from './Direction';
-import { getDomElement } from './util';
+import { getDomElement } from '../util/dom';
 import SpriteSheet from './SpriteSheet';
 
 let food! : Point;

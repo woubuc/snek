@@ -1,4 +1,4 @@
-import { START_TIME_MS } from '../const';
+import { START_TIME_MS, TIME_DECREASE } from '../const';
 
 export default class Timer {
 
@@ -21,6 +21,6 @@ export default class Timer {
 	}
 
 	public increaseGameSpeed() {
-		this.resetValue *= 0.9;
+		this.resetValue *= TIME_DECREASE;
 	}
 }

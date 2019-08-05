@@ -23,16 +23,28 @@
 			font-size: 26px;
 		}
 
-		#frame {
+		#frame, #loading {
+			position:absolute;
+			top: calc(50% - 128px);
+			left: calc(50% - 192px);
+			width: 384px;
+			height: 256px;
+		}
+
+		#score {
 			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translateX(-50%) translateY(-50%);
+			right: 2px;
+			top: -32px;
 		}
 
 		#canvas-container {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 384px;
+			height: 256px;
+
 			display: flex;
-			margin-top: 2px;
 
 			background: #ffffb5 !important;
 			border-radius: 5px;
@@ -47,7 +59,15 @@
 			padding-right: 2px;
 		}
 
-		#loading { position:absolute; bottom:50vh; left:0; width:100%; text-align:center }
+		#loading {
+			z-index: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+
+			border-radius: 5px;
+			background: #7bc67b;
+		}
 	</style>
 </head>
 <body>
@@ -55,10 +75,11 @@
 		<div id="score">0</div>
 		<div id="canvas-container"></div>
 	</div>
-	<div id="loading">Loading...</div>
+	<div id="loading">
+		<img src="images/logo.png">
+	</div>
 
-	<script src="playground.js"></script>
-<!--	<script type="module" src="index.js"></script>-->
-	<script src="app.js"></script>
+	<script src="playground.js" defer></script>
+	<script src="app.js" defer></script>
 </body>
 </html>

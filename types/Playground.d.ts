@@ -52,6 +52,7 @@ declare namespace PLAYGROUND {
 
 	interface State {
 		readonly app : Application;
+		readonly current : number;
 	}
 
 	interface ApplicationConfig extends Events<Application> {

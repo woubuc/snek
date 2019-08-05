@@ -1,9 +1,9 @@
 import { MAP_HEIGHT, MAP_WIDTH, TILE_SIZE } from './const';
-import { getDomElement } from './game/util';
-import LoadingState from './loading/LoadingState';
+import { getDomElement } from './util/dom';
 import GameState from './game/GameState';
 
-PLAYGROUND.LoadingScreen = LoadingState;
+PLAYGROUND.LoadingScreen = false;
+PLAYGROUND.Transitions = false;
 
 new PLAYGROUND.Application({
 	width: MAP_WIDTH * TILE_SIZE,
@@ -13,14 +13,18 @@ new PLAYGROUND.Application({
 
 	container: getDomElement('canvas-container'),
 
+	preload() {
+		this.loadImage('logo');
+	},
+
 	create() {
 		this.loadImage('snek');
 		this.loadImage('food');
 	},
 
 	ready() {
-		this.setState(GameState);
 		getDomElement('loading').remove();
 		getDomElement('frame').style.display = 'block';
+		this.setState(GameState);
 	},
 });
