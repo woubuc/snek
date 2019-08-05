@@ -1,7 +1,7 @@
 const TILE_SIZE = 16;
 const MAP_HEIGHT = 16;
 const MAP_WIDTH = 24;
-const START_TIME_MS = 350;
+const START_TIME_MS = 150;
 
 const Dir = Object.freeze({
 	Up: Symbol('up'),
@@ -10,27 +10,47 @@ const Dir = Object.freeze({
 	Right: Symbol('right'),
 });
 
+function invertDir(dir) {
+	switch (dir) {
+		case Dir.Up: return Dir.Down;
+		case Dir.Down: return Dir.Up;
+		case Dir.Left: return Dir.Right;
+		case Dir.Right: return Dir.Left;
+	}
+}
+
 const timer = createTimer();
 const snek = createSnek();
 
-function getPartTilePosition(direction, previousPartDirection, head = false) {
+function getPartTilePosition(partDir, previousPartDir) {
 	let tileX = 0;
 	let tileY = 0;
 
-	if (direction === Dir.Up) tileX = 0;
-	else if (direction === Dir.Left) tileX = 1;
-	else if (direction === Dir.Right) tileX = 2;
-	else tileX = 3;
+	// Tails have no previous part
+	if (!previousPartDir) {
+		switch (partDir) {
+			case Dir.Up: return [2, 3];
+			case Dir.Down: return [2, 2];
+			case Dir.Left: return [4, 2];
+			case Dir.Right: return [3, 2];
+		}
+	}
 
-	if (!previousPartDirection) return [8 * TILE_SIZE, tileX * TILE_SIZE];
+	if (partDir === previousPartDir) {
+		if (partDir === Dir.Up || partDir === Dir.Down) return [2, 0];
+		return [2, 1];
+	}
 
-	if (previousPartDirection === Dir.Up) tileY = 0;
-	else if (previousPartDirection === Dir.Right) tileY = 1;
-	else if (previousPartDirection === Dir.Down) tileY = 2;
-	else tileY = 3;
+	const pair = (from, to, part, previous) => {
+		if (previous === from && part === to) return true;
+		if (previous === invertDir(to) && part === invertDir(from)) return true;
+		return false;
+	};
 
-	if (head) return [tileX * TILE_SIZE, tileY * TILE_SIZE];
-	return [(tileX + 4) * TILE_SIZE, tileY * TILE_SIZE];
+	if (pair(Dir.Up, Dir.Right, partDir, previousPartDir)) return [3, 0];
+	if (pair(Dir.Up, Dir.Left, partDir, previousPartDir)) return [4, 0];
+	if (pair(Dir.Down, Dir.Right, partDir, previousPartDir)) return [3, 1];
+	if (pair(Dir.Down, Dir.Left, partDir, previousPartDir)) return [4, 1];
 }
 
 function createSnek() {
@@ -38,13 +58,25 @@ function createSnek() {
 	const y = Math.floor(MAP_HEIGHT / 2);
 
 	function renderHead(ctx, snek) {
-		const [tileX, tileY] = getPartTilePosition(snek.direction, snek.parts[0].direction, true);
+		const next = translatePointByDirection(snek.head, snek.direction);
+		const mouthOpen = pointsEqual(next, snek.food) || snek.containsPart(next);
+
+		const tileX = mouthOpen ? 1 : 0;
+
+		let tileY = 0;
+		const direction = snek.parts[0].direction;
+
+		if (direction === Dir.Up) tileY = 0;
+		else if (direction === Dir.Right) tileY = 1;
+		else if (direction === Dir.Down) tileY = 2;
+		else tileY = 3;
+
 		let [x, y] = snek.head;
 
 		x = Math.round(x * TILE_SIZE);
 		y = Math.round(y * TILE_SIZE);
 
-		ctx.layer.drawImage(ctx.images.snek, tileX, tileY, TILE_SIZE, TILE_SIZE, x, y, TILE_SIZE, TILE_SIZE);
+		ctx.layer.drawImage(ctx.images['snek'], tileX * TILE_SIZE, tileY * TILE_SIZE, TILE_SIZE, TILE_SIZE, x, y, TILE_SIZE, TILE_SIZE);
 	}
 
 	function renderPart(ctx, currentPart, previousPart) {
@@ -54,13 +86,16 @@ function createSnek() {
 		x = Math.round(x * TILE_SIZE);
 		y = Math.round(y * TILE_SIZE);
 
-		ctx.layer.drawImage(ctx.images.snek, tileX, tileY, TILE_SIZE, TILE_SIZE, x, y, TILE_SIZE, TILE_SIZE);
+		ctx.layer.drawImage(ctx.images['snek'], tileX * TILE_SIZE, tileY * TILE_SIZE, TILE_SIZE, TILE_SIZE, x, y, TILE_SIZE, TILE_SIZE);
 	}
 
 	const snek = Object.seal({
 		head: [x, y],
 		direction: Dir.Right,
+
 		food: [],
+		foodStep: 0,
+
 		score: 0,
 
 		parts: [
@@ -71,12 +106,9 @@ function createSnek() {
 		setDirection(dir) {
 			if (pointsEqual(translatePointByDirection(this.head, dir), this.parts[0].position)) return;
 			this.direction = dir;
-
-			timer.reset();
-			this.tick();
 		},
 
-		render(ctx) {
+		render(ctx, delta) {
 			renderHead(ctx, this);
 
 			let previousPart;
@@ -94,17 +126,22 @@ function createSnek() {
 			// Render tail
 			renderPart(ctx, previousPart, undefined);
 
+			// Render food
+			if (this.foodStep < 3) this.foodStep += delta * 6;
+
 			const [foodX, foodY] = this.food;
-			ctx.layer.drawImage(ctx.images.food, Math.round(foodX * TILE_SIZE), Math.round(foodY * TILE_SIZE));
+			const foodTileX = Math.round(this.foodStep);
+			ctx.layer.drawImage(ctx.images['food'], foodTileX * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE, foodX * TILE_SIZE, foodY * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 		},
 
 		tick() {
-			let next = translatePointByDirection(this.head, this.direction);
+			const next = translatePointByDirection(this.head, this.direction);
 
 			if (this.containsPart(next)) return; // TODO game over
 
 			if (pointsEqual(next, this.food)) {
 				this.food = generateFoodPosition(this);
+				this.foodStep = 0;
 				this.score++;
 				document.getElementById('score').innerText = this.score.toFixed(0);
 				timer.increaseGameSpeed();
@@ -162,16 +199,16 @@ function createTimer() {
 
 			if (timer > 0) return false;
 
-			timer += timerResetValue;
+			timer += Math.round(timerResetValue);
 			return true;
 		},
 
 		reset() {
-			timer = timerResetValue;
+			timer = Math.round(timerResetValue);
 		},
 
 		increaseGameSpeed() {
-			timerResetValue = Math.round(timerResetValue * 0.98);
+			timerResetValue *= 0.998;
 		}
 	});
 }
@@ -228,7 +265,7 @@ new PLAYGROUND.Application({
 	},
 
 	render(delta) {
-		this.layer.clear("#141822");
-		snek.render(this);
+		this.layer.clear("#ffffb5");
+		snek.render(this, delta);
 	},
 });
